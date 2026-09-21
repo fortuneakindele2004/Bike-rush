@@ -1,0 +1,50 @@
+name: Build Bike Rush 3D
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    container:
+      image: barichello/godot-ci:4.5
+
+    steps:
+      - name: Download project
+        uses: actions/checkout@v4
+
+      - name: Extract game project
+        run: |
+          mkdir -p game
+          unzip -o Bike_Rush_3D_Monetized_Pack.zip -d game
+          find game -name project.godot -exec dirname {} \; | head -1 > project_path.txt
+
+      - name: Create Android export preset
+        run: |
+          PROJECT_PATH=$(cat project_path.txt)
+          cat > "$PROJECT_PATH/export_presets.cfg" <<'EOF'
+          [preset.0]
+          name="Android"
+          platform="Android"
+          runnable=true
+          [preset.0.options]
+          package/unique_name="com.fortune.bikerush3d"
+          package/name="Bike Rush 3D"
+          package/short_name="Bike Rush 3D"
+          version/code=1
+          version/name="1.0"
+          EOF
+
+      - name: Build APK
+        run: |
+          PROJECT_PATH=$(cat project_path.txt)
+          mkdir -p "$PROJECT_PATH/build"
+          cd "$PROJECT_PATH"
+          godot --headless --export-debug "Android" build/BikeRush3D.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bike-Rush-3D-APK
+          path: "**/build/BikeRush3D.apk"
