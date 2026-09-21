@@ -10,6 +10,12 @@ jobs:
     container:
       image: barichello/godot-ci:4.5
 
+    env:
+      HOME: /root
+      GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /root/debug.keystore
+      GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
+      GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
+
     steps:
       - name: Download project
         uses: actions/checkout@v4
@@ -23,12 +29,16 @@ jobs:
       - name: Create Android export preset
         run: |
           PROJECT_PATH=$(cat project_path.txt)
+
           cat > "$PROJECT_PATH/export_presets.cfg" <<'EOF'
           [preset.0]
+
           name="Android"
           platform="Android"
           runnable=true
+
           [preset.0.options]
+
           package/unique_name="com.fortune.bikerush3d"
           package/name="Bike Rush 3D"
           package/short_name="Bike Rush 3D"
@@ -36,12 +46,18 @@ jobs:
           version/name="1.0"
           EOF
 
+      - name: Check Android environment
+        run: |
+          godot --version
+          java -version
+          ls -l /root/.local/share/godot/export_templates/4.5.stable/
+          ls -l /root/debug.keystore
+
       - name: Build APK
         run: |
           PROJECT_PATH=$(cat project_path.txt)
           mkdir -p "$PROJECT_PATH/build"
-          cd "$PROJECT_PATH"
-          godot --headless --export-debug "Android" build/BikeRush3D.apk
+          godot --headless --export-debug "Android" "$PROJECT_PATH/build/BikeRush3D.apk"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
